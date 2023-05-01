@@ -1,6 +1,9 @@
+import { InferGetServerSidePropsType } from 'next'
 import Head from 'next/head'
 import clientPromise from '../lib/mongodb'
-import { InferGetServerSidePropsType } from 'next'
+import HashtagTable from '../components/HashTagTable'
+import { useState } from 'react'
+import { getHashtags } from './api/topTenHashtags'
 
 export async function getServerSideProps(context) {
   try {
@@ -14,8 +17,13 @@ export async function getServerSideProps(context) {
     // Then you can execute queries against your database like so:
     // db.find({}) or any of the MongoDB Node Driver commands
 
+    const hashtags = await getHashtags()
+
     return {
-      props: { isConnected: true },
+      props: {
+        isConnected: true,
+        hashtags: hashtags
+      },
     }
   } catch (e) {
     console.error(e)
@@ -27,7 +35,10 @@ export async function getServerSideProps(context) {
 
 export default function Home({
   isConnected,
+  hashtags,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const [show, setShow] = useState(false)
+
   return (
     <div className="container">
       <Head>
@@ -49,9 +60,8 @@ export default function Home({
           </h2>
         )}
 
-        <p className="description">
-          Get started by editing <code>pages/index.js</code>
-        </p>
+        <button onClick={() => { setShow(!show) }}>Click me</button>
+        {show && <HashtagTable hashtags={hashtags} />}
 
         <div className="grid">
           <a href="https://nextjs.org/docs" className="card">
