@@ -1,3 +1,135 @@
+# SP3
+The actual database part of this assignment was pretty straight-forward. It's been a while since I've worked with React, I've only done Next.js one time in a previous assignment, and I've never worked with TypeScript before.
+
+## Setup
+The sharding cluster is set up locally using incrementing ports. It would be nicer to use Docker, but I don't know how to do that yet. Below are the ports I used.
+
+- `mongos`: 27021
+- `config`: 27022
+- `mongod`: 27023-27025
+
+I only used a single server per shard replica set for simplicitiy's sake, and I ran 3 shards.
+
+I used Next.js because we'd already used it a previous exercise and it enabled me to make a full-stack application, so I didn't have to worry about setting up both backend and frontend separately.
+
+## Actual answers to questions in the assignment.
+1. *What is sharding in mongoDB?*
+
+Sharding is when you distribute the contents of the database across several different servers. It's useful if you have a lot of data and keeping all of it on the same server would stretch the limitations of the hardware. You can then scale horizontally and add more servers that share the load.
+
+2. *What are the different components required to implement sharding?*
+
+You need shard servers. `mongod` instances with the `--shardsvr` option. They also need to be a part of a replica set, but they can be the only member.
+
+Then you need a config server to manage the instances running on different hosts.
+
+Lastly, you need a `mongos` instance, the router, which is the entry point for interacting with the shard cluster.
+
+3. *Explain architecture of sharding in mongoDB?*
+
+I cannot. I'm not entirely sure what it is you expect from this question. But I'll try.
+
+If you mean the architecture of the server instances, the shard servers contain chunks of the data, and the config contains metadata and configuration data. You interact with the `mongos` router which figures out where to send the data or retrieve it from.
+
+Mongo uses a balancer to evenly distribute the chunks across the shards.
+
+You can use **hashed sharding** where the shard keys are hashed. data close in similarity has no reason to also be close in hash. As a result, data is more evenly distributed.
+
+**Ranged sharding** doesn't use a hash to decide which chunk data belongs in, but instead a range of the shard key. Data will be less evenly distributed but data closer in similarity is more likely to be in the same chunk. You can probably setup regional distribution this way.
+
+4. *Provide implementation of map and reduce function.*
+
+Map-reduce is deprecated, and I'm not sure how this is question is different from the next.
+
+5. *Provide execution command for running MapReduce or the aggregate way of doing the same.*
+
+Aggregation pipelines are how you do grouping and aggregations in MongoDB. Below is the pipeline I constructed. It's pretty simple.
+
+```javascript
+const result = db.collection("tweets").aggregate([
+    {
+        '$unwind': {
+            'path': '$entities.hashtags'
+        }
+    }, {
+        '$sortByCount': '$entities.hashtags.text'
+    }, {
+        '$limit': 10
+    }
+]);
+return result.toArray();
+```
+
+A tweet can have more than one hashtag, so we `$unwind` the array so that each element of the array becomes its own document going into the next stage. Then use a convenient stage called `sortByCount`. It's an easy way to combine `$group` with the `$count` accumulator, followed a `$sort` descending. We group by the text of the hashtag because the indices didn't seem consistent across tweets. Finally, we `$limit` the results to 10.
+
+6. *Provide top 10 recorded out of the sorted result. (hint: use sort on the result returned by MapReduce or the aggregate way of doing the same).*
+
+I had to spin up all the servers again for this.
+
+```
+{
+  "_id": "FCBLive",
+  "count": 27
+}
+
+{
+  "_id": "AngularJS",
+  "count": 21
+}
+
+{
+  "_id": "nodejs",
+  "count": 20
+}
+
+{
+  "_id": "LFC",
+  "count": 19
+}
+
+{
+  "_id": "EspanyolFCB",
+  "count": 18
+}
+
+{
+  "_id": "IWCI",
+  "count": 16
+}
+
+{
+  "_id": "webinar",
+  "count": 16
+}
+
+{
+  "_id": "GlobalMoms",
+  "count": 14
+}
+
+{
+  "_id": "javascript",
+  "count": 14
+}
+
+{
+  "_id": "RedBizUK",
+  "count": 12
+}
+```
+
+7. *Explain how you could introduce redundancy to the setup above.*
+
+Like previously mentioned, I only used 1 server per shard replica set. You can use more for reduncancy so that if the primary goes down, another can take over. This improves uptime in case a server dies.
+
+You can do the same with config servers. There can also be multiple of these in a replica set.
+
+**FIN**
+
+Below is the original README from the Next.js MongoDB example.
+
+***
+
 ## Example app using MongoDB
 
 [MongoDB](https://www.mongodb.com/) is a general purpose, document-based, distributed database built for modern application developers and for the cloud era. This example will show you how to connect to and use MongoDB as your backend for your Next.js app.
