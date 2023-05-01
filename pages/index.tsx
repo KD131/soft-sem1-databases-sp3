@@ -4,6 +4,8 @@ import clientPromise from '../lib/mongodb'
 import HashtagTable from '../components/HashTagTable'
 import { useState } from 'react'
 import { getHashtags } from './api/topTenHashtags'
+import PostForm from '../components/PostForm'
+import PostTable from '../components/PostTable'
 
 export async function getServerSideProps(context) {
   try {
@@ -38,6 +40,7 @@ export default function Home({
   hashtags,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [show, setShow] = useState(false)
+  const [posts, setPosts] = useState()
 
   return (
     <div className="container">
@@ -60,8 +63,17 @@ export default function Home({
           </h2>
         )}
 
+        <h2>Top 10 Hashtags</h2>
         <button onClick={() => { setShow(!show) }}>Click me</button>
         {show && <HashtagTable hashtags={hashtags} />}
+
+        <h2>Posts</h2>
+        <PostForm />
+        <button onClick={async () => {
+          const res = await fetch('/api/posts')
+          setPosts(await res.json())
+        }}>Get Posts</button>
+        {posts && <PostTable posts={posts} />}
 
         <div className="grid">
           <a href="https://nextjs.org/docs" className="card">

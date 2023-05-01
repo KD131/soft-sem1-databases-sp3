@@ -2,9 +2,11 @@ function HashtagTable({ hashtags }) {
     return (
         <table>
             <thead>
-                <th>Nr.</th>
-                <th>Hashtag</th>
-                <th>Count</th>
+                <tr>
+                    <th>Nr.</th>
+                    <th>Hashtag</th>
+                    <th>Count</th>
+                </tr>
             </thead>
             <tbody>
                 {hashtags.map((hashtag, index) => {
